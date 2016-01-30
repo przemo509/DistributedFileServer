@@ -20,16 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)\..\libgit2\windows\amd64\git2-6aa06b6.dll" />
-    <None Include="$(MSBuildThisFileDirectory)\..\libgit2\windows\amd64\git2-6aa06b6.pdb" />
-    <None Include="$(MSBuildThisFileDirectory)\..\libgit2\windows\x86\git2-6aa06b6.dll" />
-    <None Include="$(MSBuildThisFileDirectory)\..\libgit2\windows\x86\git2-6aa06b6.pdb" />
-    <None Include="$(MSBuildThisFileDirectory)\..\libgit2\osx\libgit2-6aa06b6.dylib" />
-    <None Include="$(MSBuildThisFileDirectory)\..\libgit2\linux\amd64\libgit2-6aa06b6.so" />
-    <None Include="$(MSBuildThisFileDirectory)\..\libgit2\LibGit2Sharp.dll.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)\..\libgit2\libgit2_hash.txt" />
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)\..\libgit2\libgit2_filename.txt" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
