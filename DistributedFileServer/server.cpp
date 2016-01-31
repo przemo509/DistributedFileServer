@@ -8,10 +8,12 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <ctime>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <boost/asio.hpp>
+
+#include "config.h"
 
 using boost::asio::ip::tcp;
 
@@ -20,13 +22,19 @@ std::string make_daytime_string()
 	return "boost tcp server test";
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+	if (argc != 2) {
+		std::cout << "Usage: " << argv[0] << " config_file_full_path" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	config config(argv[1]);
+
 	try
 	{
 		boost::asio::io_service io_service;
 
-		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), 12345));
+		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), config.getPort()));
 
 		for (;;)
 		{
@@ -44,5 +52,5 @@ int main()
 		std::cerr << e.what() << std::endl;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
