@@ -12,13 +12,13 @@ config::config(const std::string& pathToFile)
 	boost::property_tree::read_json(pathToFile, tree);
 
 	autoMode = tree.get<bool>("auto_mode");
-	BOOST_LOG_TRIVIAL(info) << " - server auto mode is set to [" << autoMode << "]";
+	BOOST_LOG_TRIVIAL(info) << " - server auto mode is set to   " << autoMode;
 	port = tree.get<int>("port");
-	BOOST_LOG_TRIVIAL(info) << " - server listening port is [" << port << "]";
+	BOOST_LOG_TRIVIAL(info) << " - server listening port is     " << port;
 	logFileFullPath = tree.get<std::string>("log_file_full_path");
-	BOOST_LOG_TRIVIAL(info) << " - log file is [" << logFileFullPath << "]";
+	BOOST_LOG_TRIVIAL(info) << " - log file is                  " << logFileFullPath;
 	sharedDirectoryFullPath = tree.get<std::string>("shared_directory_full_path");
-	BOOST_LOG_TRIVIAL(info) << " - shared direcotry is [" << sharedDirectoryFullPath << "]";
+	BOOST_LOG_TRIVIAL(info) << " - shared direcotry is          " << sharedDirectoryFullPath;
 
 	check();
 	BOOST_LOG_TRIVIAL(info) << "Reading server configuration file - OK";
