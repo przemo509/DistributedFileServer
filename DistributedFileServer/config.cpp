@@ -27,18 +27,18 @@ config::config(const std::string& pathToFile)
 void config::check() {
 	// log file
 	if (!boost::filesystem::exists(logFileFullPath)) {
-		throw "Log file [" + logFileFullPath + "] does not exist!";
+		throw std::exception(("Log file [" + logFileFullPath + "] does not exist!").c_str());
 	}
 	if (!boost::filesystem::is_regular_file(logFileFullPath)) {
-		throw "Path [" + logFileFullPath + "] is not a file!";
+		throw std::exception(("Path [" + logFileFullPath + "] is not a file!").c_str());
 	}
 
 	// shared direcotry
 	if (!boost::filesystem::exists(sharedDirectoryFullPath)) {
-		throw "Shared directory [" + sharedDirectoryFullPath + "] does not exist!";
+		throw std::exception(("Shared directory [" + sharedDirectoryFullPath + "] does not exist!").c_str());
 	}
 	if (!boost::filesystem::is_directory(sharedDirectoryFullPath)) {
-		throw "Path [" + sharedDirectoryFullPath + "] is not a directory!";
+		throw std::exception(("Path [" + sharedDirectoryFullPath + "] is not a directory!").c_str());
 	}
 }
 
