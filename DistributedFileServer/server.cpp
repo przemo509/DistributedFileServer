@@ -1,55 +1,75 @@
-//
-// server.cpp
-// ~~~~~~~~~~
-//
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
-
 #include <cstdlib>
 #include <iostream>
 #include <string>
-#include <boost/asio.hpp>
+
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+
+#include <boost/asio.hpp> // must be ater logging (otherwise you get linker error, don't know why)
 
 #include "config.h"
 
-using boost::asio::ip::tcp;
+static const std::string DELIMETER = "\n";
 
-std::string make_daytime_string()
+std::string calculateResponse(std::string request)
 {
-	return "boost tcp server test";
+	return "ggggg response to request: " + request;
 }
 
 int main(int argc, char* argv[])
 {
+	// global logging filter
+	boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
+
 	if (argc != 2) {
 		std::cout << "Usage: " << argv[0] << " config_file_full_path" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	config config(argv[1]);
+	std::string configFileFullPath = argv[1];
 
 	try
 	{
-		boost::asio::io_service io_service;
+		config config(configFileFullPath);
 
-		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), config.getPort()));
+		// preparing service
+		using namespace boost::asio;
+		io_service io_service;
+		ip::tcp::acceptor acceptor(io_service, ip::tcp::endpoint(ip::tcp::v4(), config.getPort()));
 
-		for (;;)
+		int requests = 0;
+
+		while(true)
 		{
-			tcp::socket socket(io_service);
+			requests++;
+
+			// prepaaring socket
+			ip::tcp::socket socket(io_service);
+			BOOST_LOG_TRIVIAL(debug) << "\tWaiting for requests on port " << config.getPort();
 			acceptor.accept(socket);
+			BOOST_LOG_TRIVIAL(debug) << "(" << requests << ") Request arrived";
 
-			std::string message = make_daytime_string();
+			// receiving request
+			boost::system::error_code errorCode;
+			boost::asio::streambuf buf;
+			size_t bytesReceived = read_until(socket, buf, DELIMETER, errorCode);
+			if (errorCode != 0) {
+				// TODO handle eof when client gets down
+				BOOST_LOG_TRIVIAL(fatal) << "\tException: [" << errorCode.message() << "]";
+			}
+			std::string request;
+			std::getline(std::istream(&buf), request);
+			BOOST_LOG_TRIVIAL(debug) << "\tRequest received: " << request;
 
-			boost::system::error_code ignored_error;
-			boost::asio::write(socket, boost::asio::buffer(message), ignored_error);
+			// send response
+			std::string response = calculateResponse(request);
+			write(socket, buffer(response + DELIMETER));
+			BOOST_LOG_TRIVIAL(debug) << "\tResposne sent: " << response;
 		}
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		BOOST_LOG_TRIVIAL(fatal) << "Exception: [" << e.what() << "]";
 	}
 
 	return EXIT_SUCCESS;
