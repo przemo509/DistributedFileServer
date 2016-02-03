@@ -18,7 +18,7 @@ config::config(const std::string& pathToFile)
 	logFileFullPath = tree.get<std::string>("log_file_full_path");
 	BOOST_LOG_TRIVIAL(info) << " - log file is                  " << logFileFullPath;
 	sharedDirectoryFullPath = tree.get<std::string>("shared_directory_full_path");
-	BOOST_LOG_TRIVIAL(info) << " - shared direcotry is          " << sharedDirectoryFullPath;
+	BOOST_LOG_TRIVIAL(info) << " - shared directory is          " << sharedDirectoryFullPath;
 
 	check();
 	BOOST_LOG_TRIVIAL(info) << "Reading server configuration file - OK";
@@ -33,7 +33,7 @@ void config::check() {
 		throw std::exception(("Path [" + logFileFullPath + "] is not a file!").c_str());
 	}
 
-	// shared direcotry
+	// shared directory
 	if (!boost::filesystem::exists(sharedDirectoryFullPath)) {
 		throw std::exception(("Shared directory [" + sharedDirectoryFullPath + "] does not exist!").c_str());
 	}
