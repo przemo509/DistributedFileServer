@@ -10,11 +10,42 @@
 
 #include "config.h"
 
-static const std::string DELIMETER = "\n";
+using namespace boost::asio;
+
+static const int HEADER_LENGTH = 5;
+
+void assertRequestOk(size_t bytesReceived, int assumedLength, boost::system::error_code& errorCode) {
+	if (bytesReceived != assumedLength) {
+		throw new std::exception(std::string("Exception while reading request: unexpected length: " + bytesReceived).c_str());
+	}
+	if (errorCode != 0) {
+		// TODO handle eof when server gets down
+		throw new std::exception(("Exception while reading request: error: " + errorCode.message()).c_str());
+	}
+}
+
+std::string getBufAsString(streambuf& buf) {
+	std::ostringstream oss;
+	oss << &buf;
+	return oss.str();
+}
+
+int getRequestLength(streambuf& buf) {
+	std::string header = getBufAsString(buf);
+	int requestLength = atoi(header.c_str());
+	return requestLength;
+}
+
+std::string makeHeader(int bodySize) {
+	char h[HEADER_LENGTH + 1];
+	sprintf_s(h, ("%0" + std::to_string(HEADER_LENGTH) + "d").c_str(), bodySize);
+	return h;
+}
 
 std::string calculateResponse(std::string request)
 {
-	return "ggggg response to request: " + request;
+	std::string response("{psadlo server test: response to request: " + request + "}");
+	return makeHeader(response.size()) + response;
 }
 
 int main(int argc, char* argv[])
@@ -33,7 +64,6 @@ int main(int argc, char* argv[])
 		config config(configFileFullPath);
 
 		// preparing service
-		using namespace boost::asio;
 		io_service io_service;
 		ip::tcp::acceptor acceptor(io_service, ip::tcp::endpoint(ip::tcp::v4(), config.getPort()));
 
@@ -45,26 +75,34 @@ int main(int argc, char* argv[])
 
 			// prepaaring socket
 			ip::tcp::socket socket(io_service);
-			BOOST_LOG_TRIVIAL(debug) << "\tWaiting for requests on port " << config.getPort();
+			BOOST_LOG_TRIVIAL(debug) << "###############################################################";
+			BOOST_LOG_TRIVIAL(debug) << "Waiting for requests on port " << config.getPort();
 			acceptor.accept(socket);
 			BOOST_LOG_TRIVIAL(debug) << "(" << requests << ") Request arrived";
 
-			// receiving request
+			// receiving request header (number of remaining bytes)
 			boost::system::error_code errorCode;
-			boost::asio::streambuf buf;
-			size_t bytesReceived = read_until(socket, buf, DELIMETER, errorCode);
-			if (errorCode != 0) {
-				// TODO handle eof when client gets down
-				BOOST_LOG_TRIVIAL(fatal) << "\tException: [" << errorCode.message() << "]";
-			}
-			std::string request;
-			std::getline(std::istream(&buf), request);
-			BOOST_LOG_TRIVIAL(debug) << "\tRequest received: " << request;
+			streambuf buf;
+			BOOST_LOG_TRIVIAL(debug) << "Waiting for request length header...";
+			size_t bytesReceived = read(socket, buf, detail::transfer_exactly_t(HEADER_LENGTH), errorCode);
+			assertRequestOk(bytesReceived, HEADER_LENGTH, errorCode);
+			int requestLength = getRequestLength(buf);
+			//buf.consume(bytesReceived); // clear buf
+			BOOST_LOG_TRIVIAL(debug) << "Request length header received: " << requestLength;
 
-			// send response
+			// receiving request body
+			BOOST_LOG_TRIVIAL(debug) << "Waiting for request body...";
+			bytesReceived = read(socket, buf, detail::transfer_exactly_t(requestLength), errorCode);
+			assertRequestOk(bytesReceived, requestLength, errorCode);
+			std::string request = getBufAsString(buf);
+			BOOST_LOG_TRIVIAL(debug) << "Request body received:\n" << request;
+
+
+			// sending response
 			std::string response = calculateResponse(request);
-			write(socket, buffer(response + DELIMETER));
-			BOOST_LOG_TRIVIAL(debug) << "\tResposne sent: " << response;
+			BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
+			write(socket, buffer(response));
+			BOOST_LOG_TRIVIAL(debug) << "Response sent";
 		}
 	}
 	catch (std::exception& e)
