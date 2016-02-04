@@ -17,6 +17,7 @@ public:
 
 	bool fileWasWrittenInThisTransaction(std::string transactionId, std::string filename);
 	std::string lastFileContentFromThisTransaction(std::string transactionId, std::string filename);
+	std::vector<std::pair<std::string, std::string>> getPendingWrites(std::string transactionId);
 private:
 	std::string databaseLocation;
 

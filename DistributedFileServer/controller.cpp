@@ -96,7 +96,20 @@ void controller::commitTransaction(string transactionId) {
 }
 
 void controller::commitPendingWrites(string transactionId) {
-	// TODO
+	vector<pair<string, string>> pendingWrites = dao.getPendingWrites(transactionId);
+	for (auto write : pendingWrites) {
+		boost::filesystem::path file(cfg.getSharedDirectoryFullPath());
+		file /= write.first;
+		if (!boost::filesystem::exists(file)) {
+			boost::filesystem::ofstream fileStream(file, std::ios_base::out);
+			fileStream << write.second;
+			fileStream.close();
+		} else {
+			boost::filesystem::ofstream fileStream(file, std::ios_base::out);
+			fileStream << write.second;
+			fileStream.close();
+		}
+	}
 }
 
 string controller::handleGlobalAbortMessage(string transactionId) {

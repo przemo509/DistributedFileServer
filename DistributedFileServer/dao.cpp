@@ -1,4 +1,7 @@
+#include <iostream>
+#include <iomanip>
 #include <string>
+#include <vector>
 
 #include "json_messages.h"
 #include "dao.h"
@@ -99,6 +102,8 @@ void dao::insertOperation(string name, string transactionId, string filename, st
 	}
 
 	closeStatement(db, stmt);
+
+	cout << setw(50) << transactionId << setw(20) << name << setw(20) << filename << "\t" << fileContent << endl;
 }
 
 bool dao::fileWasWrittenInThisTransaction(string transactionId, string filename) {
@@ -116,6 +121,9 @@ bool dao::fileWasWrittenInThisTransaction(string transactionId, string filename)
 
 	if(sqlite3_step(stmt) == SQLITE_ROW) {
 		int count = sqlite3_column_int(stmt, 0);
+		if (sqlite3_step(stmt) != SQLITE_DONE) {
+			throw exception(("Select count not done exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
+		}
 		closeStatement(db, stmt);
 		return count > 0;
 	} else {
@@ -140,6 +148,9 @@ string dao::lastFileContentFromThisTransaction(string transactionId, string file
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		string fileContent = getText(stmt, 0);
+		if (sqlite3_step(stmt) != SQLITE_DONE) {
+			throw exception(("Select not done exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
+		}
 		closeStatement(db, stmt);
 		return fileContent;
 	} else {
@@ -147,21 +158,28 @@ string dao::lastFileContentFromThisTransaction(string transactionId, string file
 	}
 }
 
-//string xxxlastFileContentFromThisTransaction(string transactionId, string filename) {
-//	sqlite3_stmt *stmt = NULL;
-//	sqlite3 *db = NULL;
-//	string query = "SELECT";
-//	prepareStatement(query, &stmt, &db);
-//
-//
-//	// if there were parameters to bind, we'd do that here
-//
-//	while (sqlite3_step(stmt) == SQLITE_ROW) {
-//		// retrieve the value of the first column (0-based)
-//		int count = sqlite3_column_int(stmt, 0);
-//
-//		// do something with count
-//	}
-//	closeStatement(stmt, db);
-//	return "";
-//}
+vector<pair<string, string>> dao::getPendingWrites(string transactionId) {
+	sqlite3_stmt *stmt = NULL;
+	sqlite3 *db = NULL;
+	string query = "SELECT o.filename, o.data " \
+		"FROM OPERATION o " \
+		"WHERE o.transaction_id = ? "\
+		"AND o.name = ?";
+	prepareStatement(&db, &stmt, query);
+	bindTextParam(db, stmt, 1, transactionId);
+	bindTextParam(db, stmt, 2, MSG_WRITE);
+
+	vector<pair<string, string>> writes;
+
+	int result;
+	while ((result = sqlite3_step(stmt)) == SQLITE_ROW) {
+		string filename = getText(stmt, 0);
+		string fileContent = getText(stmt, 1);
+		writes.push_back(pair<string, string>(filename, fileContent));
+	}
+	if (result != SQLITE_DONE) {
+		throw exception(("Select not done exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
+	}
+	closeStatement(db, stmt);
+	return writes;
+}
