@@ -9,43 +9,43 @@
 #include <boost/asio.hpp> // must be ater logging (otherwise you get linker error, don't know why)
 
 #include "config.h"
+#include "controller.h"
 
 using namespace boost::asio;
+using namespace std;
 
 static const int HEADER_LENGTH = 5;
 
 void assertRequestOk(size_t bytesReceived, int assumedLength, boost::system::error_code& errorCode) {
-	if (bytesReceived != assumedLength) {
-		throw new std::exception(std::string("Exception while reading request: unexpected length: " + bytesReceived).c_str());
-	}
 	if (errorCode != 0) {
 		// TODO handle eof when server gets down
-		throw new std::exception(("Exception while reading request: error: " + errorCode.message()).c_str());
+		throw new exception(("Exception while reading request: error: " + errorCode.message()).c_str());
+	}
+	if (bytesReceived != assumedLength) {
+		throw new exception(string("Exception while reading request: unexpected length: " + bytesReceived).c_str());
 	}
 }
 
-std::string getBufAsString(streambuf& buf) {
-	std::ostringstream oss;
+string getBufAsString(boost::asio::streambuf& buf) {
+	ostringstream oss;
 	oss << &buf;
 	return oss.str();
 }
 
-int getRequestLength(streambuf& buf) {
-	std::string header = getBufAsString(buf);
+int getRequestLength(boost::asio::streambuf& buf) {
+	string header = getBufAsString(buf);
 	int requestLength = atoi(header.c_str());
 	return requestLength;
 }
 
-std::string makeHeader(int bodySize) {
+string makeHeader(int bodySize) {
 	char h[HEADER_LENGTH + 1];
-	sprintf_s(h, ("%0" + std::to_string(HEADER_LENGTH) + "d").c_str(), bodySize);
+	sprintf_s(h, ("%0" + to_string(HEADER_LENGTH) + "d").c_str(), bodySize);
 	return h;
 }
 
-std::string calculateResponse(std::string request)
-{
-	std::string response("{psadlo server test: response to request: " + request + "}");
-	return makeHeader(response.size()) + response;
+string addHeader(string& request) {
+	return makeHeader(request.size()) + request;
 }
 
 int main(int argc, char* argv[])
@@ -54,14 +54,15 @@ int main(int argc, char* argv[])
 	boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
 
 	if (argc != 2) {
-		std::cout << "Usage: " << argv[0] << " config_file_full_path" << std::endl;
+		cout << "Usage: " << argv[0] << " config_file_full_path" << endl;
 		exit(EXIT_FAILURE);
 	}
-	std::string configFileFullPath = argv[1];
+	string configFileFullPath = argv[1];
 
 	try
 	{
 		config config(configFileFullPath);
+		controller controller(config);
 
 		// preparing service
 		io_service io_service;
@@ -82,7 +83,7 @@ int main(int argc, char* argv[])
 
 			// receiving request header (number of remaining bytes)
 			boost::system::error_code errorCode;
-			streambuf buf;
+			boost::asio::streambuf buf;
 			BOOST_LOG_TRIVIAL(debug) << "Waiting for request length header...";
 			size_t bytesReceived = read(socket, buf, detail::transfer_exactly_t(HEADER_LENGTH), errorCode);
 			assertRequestOk(bytesReceived, HEADER_LENGTH, errorCode);
@@ -94,18 +95,17 @@ int main(int argc, char* argv[])
 			BOOST_LOG_TRIVIAL(debug) << "Waiting for request body...";
 			bytesReceived = read(socket, buf, detail::transfer_exactly_t(requestLength), errorCode);
 			assertRequestOk(bytesReceived, requestLength, errorCode);
-			std::string request = getBufAsString(buf);
+			string request = getBufAsString(buf);
 			BOOST_LOG_TRIVIAL(debug) << "Request body received:\n" << request;
 
-
 			// sending response
-			std::string response = calculateResponse(request);
+			string response = controller.calculateResponse(request);
 			BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
-			write(socket, buffer(response));
+			write(socket, buffer(addHeader(response)));
 			BOOST_LOG_TRIVIAL(debug) << "Response sent";
 		}
 	}
-	catch (std::exception& e)
+	catch (exception& e)
 	{
 		BOOST_LOG_TRIVIAL(fatal) << "Exception: [" << e.what() << "]";
 	}
