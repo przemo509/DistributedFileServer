@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="config.cpp" />
     <ClCompile Include="controller.cpp" />
+    <ClCompile Include="dao.cpp" />
     <ClCompile Include="server.cpp" />
     <ClCompile Include="sqlite3.c" />
   </ItemGroup>
@@ -161,6 +162,7 @@
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="controller.h" />
+    <ClInclude Include="dao.h" />
     <ClInclude Include="json_messages.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="sqlite3.h" />

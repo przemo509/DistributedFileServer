@@ -7,13 +7,13 @@
 #include "config.h"
 #include "json_messages.h"
 #include "log.h"
+#include "dao.h"
 
 using namespace boost::property_tree;
 using namespace std;
 
-controller::controller(config& config):cfg(config)
+controller::controller(config& config):cfg(config), dao(config.getLogFileFullPath())
 {
-	initLog(cfg.getLogFileFullPath());
 }
 
 controller::~controller()
@@ -41,11 +41,19 @@ string controller::calculateResponse(string request) {
 }
 
 string controller::handleReadMessage(string transactionId, string filename) {
-	string fileContent = getFileContent(filename);
+	string fileContent = getFileContent(transactionId, filename);
 	return makeReadResponseMessage(transactionId, filename, fileContent);
 }
 
-string controller::getFileContent(string filename) {
+string controller::getFileContent(string transactionId, string filename) {
+	if (dao.fileWasWrittenInThisTransaction(transactionId, filename)) {
+		return dao.lastFileContentFromThisTransaction(transactionId, filename);
+	} else {
+		return getFileContentFromHardDrive(filename);
+	}
+}
+
+string controller::getFileContentFromHardDrive(string filename) {
 	boost::filesystem::path file(cfg.getSharedDirectoryFullPath());
 	file /= filename;
 	if (!boost::filesystem::exists(file)) {
