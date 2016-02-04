@@ -102,9 +102,13 @@ int main(int argc, char* argv[])
 
 				// sending response
 				string response = controller.calculateResponse(request);
-				BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
-				write(socket, buffer(addHeader(response)));
-				BOOST_LOG_TRIVIAL(debug) << "Response sent";
+				if (response == controller::NO_RESPONSE) {
+					BOOST_LOG_TRIVIAL(debug) << "No response required";
+				} else {
+					BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
+					write(socket, buffer(addHeader(response)));
+					BOOST_LOG_TRIVIAL(debug) << "Response sent";
+				}
 			}
 			catch (exception& e)
 			{
