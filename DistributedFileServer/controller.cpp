@@ -3,10 +3,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
+#include "json_messages.h"
 #include "controller.h"
 #include "config.h"
-#include "json_messages.h"
-#include "log.h"
 #include "dao.h"
 
 using namespace boost::property_tree;
@@ -42,6 +41,7 @@ string controller::calculateResponse(string request) {
 
 string controller::handleReadMessage(string transactionId, string filename) {
 	string fileContent = getFileContent(transactionId, filename);
+	dao.insertOperation(MSG_READ, transactionId, filename, fileContent);
 	return makeReadResponseMessage(transactionId, filename, fileContent);
 }
 
@@ -67,16 +67,16 @@ string controller::getFileContentFromHardDrive(string filename) {
 }
 
 string controller::handleWriteMessage(string transactionId, string filename, string fileContent) {
-	logWrite(transactionId, filename, fileContent);
+	dao.insertOperation(MSG_WRITE, transactionId, filename, fileContent);
 	return makeWriteResponseMessage(transactionId);
 }
 
 string controller::handlePrepareMessage(string transactionId) {
 	if (canCommitTransaction(transactionId)) {
-		logVoteCommit(transactionId);
+		dao.insertOperation(MSG_VOTE_COMMIT, transactionId);
 		return makeVoteCommitMessage(transactionId);
 	} else {
-		logVoteAbort(transactionId);
+		dao.insertOperation(MSG_VOTE_ABORT, transactionId);
 		return makeVoteAbortMessage(transactionId);
 	}
 }
@@ -92,7 +92,7 @@ string controller::handleGlobalCommitMessage(string transactionId) {
 
 void controller::commitTransaction(string transactionId) {
 	commitPendingWrites(transactionId);
-	logCommit(transactionId);
+	dao.insertOperation(MSG_GLOBAL_COMMIT, transactionId);
 }
 
 void controller::commitPendingWrites(string transactionId) {
@@ -100,7 +100,6 @@ void controller::commitPendingWrites(string transactionId) {
 }
 
 string controller::handleGlobalAbortMessage(string transactionId) {
-	logAbort(transactionId);
+	dao.insertOperation(MSG_GLOBAL_ABORT, transactionId);
 	return makeVoteAbortMessage(transactionId);
-
 }

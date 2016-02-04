@@ -153,6 +153,7 @@
     <ClCompile Include="config.cpp" />
     <ClCompile Include="controller.cpp" />
     <ClCompile Include="dao.cpp" />
+    <ClCompile Include="json_messahes.cpp" />
     <ClCompile Include="server.cpp" />
     <ClCompile Include="sqlite3.c" />
   </ItemGroup>
@@ -164,7 +165,6 @@
     <ClInclude Include="controller.h" />
     <ClInclude Include="dao.h" />
     <ClInclude Include="json_messages.h" />
-    <ClInclude Include="log.h" />
     <ClInclude Include="sqlite3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

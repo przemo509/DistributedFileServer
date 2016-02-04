@@ -1,1 +1,1 @@
-instance1 / file a.txt / contents
+file a content
