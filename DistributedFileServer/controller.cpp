@@ -100,15 +100,9 @@ void controller::commitPendingWrites(string transactionId) {
 	for (auto write : pendingWrites) {
 		boost::filesystem::path file(cfg.getSharedDirectoryFullPath());
 		file /= write.first;
-		if (!boost::filesystem::exists(file)) {
-			boost::filesystem::ofstream fileStream(file, std::ios_base::out);
-			fileStream << write.second;
-			fileStream.close();
-		} else {
-			boost::filesystem::ofstream fileStream(file, std::ios_base::out);
-			fileStream << write.second;
-			fileStream.close();
-		}
+		boost::filesystem::ofstream fileStream(file, std::ios_base::out);
+		fileStream << write.second;
+		fileStream.close();
 	}
 }
 
