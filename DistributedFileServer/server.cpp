@@ -51,7 +51,7 @@ string addHeader(string& request) {
 int main(int argc, char* argv[])
 {
 	// global logging filter
-	boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
+	boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
 
 	if (argc != 2) {
 		cout << "Usage: " << argv[0] << " config_file_full_path" << endl;
