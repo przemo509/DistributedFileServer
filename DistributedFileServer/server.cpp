@@ -72,46 +72,57 @@ int main(int argc, char* argv[])
 
 		while(true)
 		{
-			requests++;
+			try
+			{
+				requests++;
 
-			// prepaaring socket
-			ip::tcp::socket socket(io_service);
-			BOOST_LOG_TRIVIAL(debug) << "###############################################################";
-			BOOST_LOG_TRIVIAL(debug) << "Waiting for requests on port " << config.getPort();
-			acceptor.accept(socket);
-			BOOST_LOG_TRIVIAL(debug) << "(" << requests << ") Request arrived";
+				// prepaaring socket
+				ip::tcp::socket socket(io_service);
+				BOOST_LOG_TRIVIAL(debug) << "###############################################################";
+				BOOST_LOG_TRIVIAL(debug) << "Waiting for requests on port " << config.getPort();
+				acceptor.accept(socket);
+				BOOST_LOG_TRIVIAL(debug) << "(" << requests << ") Request arrived";
 
-			// receiving request header (number of remaining bytes)
-			boost::system::error_code errorCode;
-			boost::asio::streambuf buf;
-			BOOST_LOG_TRIVIAL(debug) << "Waiting for request length header...";
-			size_t bytesReceived = read(socket, buf, detail::transfer_exactly_t(HEADER_LENGTH), errorCode);
-			assertRequestOk(bytesReceived, HEADER_LENGTH, errorCode);
-			int requestLength = getRequestLength(buf);
-			//buf.consume(bytesReceived); // clear buf
-			BOOST_LOG_TRIVIAL(debug) << "Request length header received: " << requestLength;
+				// receiving request header (number of remaining bytes)
+				boost::system::error_code errorCode;
+				boost::asio::streambuf buf;
+				BOOST_LOG_TRIVIAL(debug) << "Waiting for request length header...";
+				size_t bytesReceived = read(socket, buf, detail::transfer_exactly_t(HEADER_LENGTH), errorCode);
+				assertRequestOk(bytesReceived, HEADER_LENGTH, errorCode);
+				int requestLength = getRequestLength(buf);
+				//buf.consume(bytesReceived); // clear buf
+				BOOST_LOG_TRIVIAL(debug) << "Request length header received: " << requestLength;
 
-			// receiving request body
-			BOOST_LOG_TRIVIAL(debug) << "Waiting for request body...";
-			bytesReceived = read(socket, buf, detail::transfer_exactly_t(requestLength), errorCode);
-			assertRequestOk(bytesReceived, requestLength, errorCode);
-			string request = getBufAsString(buf);
-			BOOST_LOG_TRIVIAL(debug) << "Request body received:\n" << request;
+				// receiving request body
+				BOOST_LOG_TRIVIAL(debug) << "Waiting for request body...";
+				bytesReceived = read(socket, buf, detail::transfer_exactly_t(requestLength), errorCode);
+				assertRequestOk(bytesReceived, requestLength, errorCode);
+				string request = getBufAsString(buf);
+				BOOST_LOG_TRIVIAL(debug) << "Request body received:\n" << request;
 
-			// sending response
-			string response = controller.calculateResponse(request);
-			BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
-			write(socket, buffer(addHeader(response)));
-			BOOST_LOG_TRIVIAL(debug) << "Response sent";
+				// sending response
+				string response = controller.calculateResponse(request);
+				BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
+				write(socket, buffer(addHeader(response)));
+				BOOST_LOG_TRIVIAL(debug) << "Response sent";
+			}
+			catch (exception& e)
+			{
+				BOOST_LOG_TRIVIAL(fatal) << "Request processing exception: [" << e.what() << "]";
+			}
+			catch (...)
+			{
+				BOOST_LOG_TRIVIAL(fatal) << "Unknown request processing exception";
+			}
 		}
 	}
 	catch (exception& e)
 	{
-		BOOST_LOG_TRIVIAL(fatal) << "Exception: [" << e.what() << "]";
+		BOOST_LOG_TRIVIAL(fatal) << "Global exception: [" << e.what() << "]";
 	} 
 	catch (...)
 	{
-		BOOST_LOG_TRIVIAL(fatal) << "Unknown exception";
+		BOOST_LOG_TRIVIAL(fatal) << "Unknown global exception";
 	}
 
 	return EXIT_SUCCESS;
