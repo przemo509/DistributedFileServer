@@ -19,10 +19,10 @@ static const int HEADER_LENGTH = 5;
 void assertRequestOk(size_t bytesReceived, int assumedLength, boost::system::error_code& errorCode) {
 	if (errorCode != 0) {
 		// TODO handle eof when server gets down
-		throw new exception(("Exception while reading request: error: " + errorCode.message()).c_str());
+		throw exception(("Exception while reading request: error: " + errorCode.message()).c_str());
 	}
 	if (bytesReceived != assumedLength) {
-		throw new exception(string("Exception while reading request: unexpected length: " + bytesReceived).c_str());
+		throw exception(string("Exception while reading request: unexpected length: " + bytesReceived).c_str());
 	}
 }
 
@@ -108,6 +108,10 @@ int main(int argc, char* argv[])
 	catch (exception& e)
 	{
 		BOOST_LOG_TRIVIAL(fatal) << "Exception: [" << e.what() << "]";
+	} 
+	catch (...)
+	{
+		BOOST_LOG_TRIVIAL(fatal) << "Unknown exception";
 	}
 
 	return EXIT_SUCCESS;

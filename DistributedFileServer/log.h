@@ -11,7 +11,7 @@ using namespace std;
 sqlite3 * openDatabase(string logFilePath) {
 	sqlite3 * db;
 	if (sqlite3_open(logFilePath.c_str(), &db)) {
-		throw new exception(("Cannot open database [" + logFilePath + "]. Error message is:" + string(sqlite3_errmsg(db))).c_str());
+		throw exception(("Cannot open database [" + logFilePath + "]. Error message is:" + string(sqlite3_errmsg(db))).c_str());
 	}
 	return db;
 }
@@ -31,7 +31,7 @@ void initLog(string logFilePath) {
 		")",
 		NULL, NULL, &sErrMsg);
 	if (returnCode != SQLITE_OK) {
-		throw new exception(("Query exception: " + string(sqlite3_errmsg(db))).c_str());
+		throw exception(("Query exception: " + string(sqlite3_errmsg(db))).c_str());
 	}
 
 	closeDatabase(db);
