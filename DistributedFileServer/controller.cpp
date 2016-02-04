@@ -3,8 +3,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
-#include "config.h"
 #include "controller.h"
+#include "config.h"
 #include "json_messages.h"
 #include "log.h"
 
@@ -13,6 +13,7 @@ using namespace std;
 
 controller::controller(config& config):cfg(config)
 {
+	initLog(cfg.getLogFileFullPath());
 }
 
 controller::~controller()
