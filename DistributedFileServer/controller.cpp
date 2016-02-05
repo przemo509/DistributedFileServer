@@ -84,11 +84,11 @@ string controller::handlePrepareMessage(string transactionId) {
 }
 
 bool controller::canCommitTransaction(string transactionId) {
-	//if (dao.writeInterceptedReads(transactionId)) {
-	//	return false;
-	//} else if (dao.writeInterceptedReads(transactionId)) {
-	//	return false;
-	//}
+	if (dao.writeIntercepted(transactionId)) {
+		return false;
+	} else if (dao.readIntercepted(transactionId)) {
+		return false;
+	} 
 	return true;
 }
 

@@ -119,7 +119,7 @@ bool dao::fileWasWrittenInThisTransaction(string transactionId, string filename)
 	bindTextParam(db, stmt, 2, filename);
 	bindTextParam(db, stmt, 3, MSG_WRITE);
 
-	if(sqlite3_step(stmt) == SQLITE_ROW) {
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		int count = sqlite3_column_int(stmt, 0);
 		if (sqlite3_step(stmt) != SQLITE_DONE) {
 			throw exception(("Select count not done exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
@@ -182,4 +182,68 @@ vector<pair<string, string>> dao::getPendingWrites(string transactionId) {
 	}
 	closeStatement(db, stmt);
 	return writes;
+}
+
+bool dao::writeIntercepted(string transactionId) {
+	sqlite3_stmt *stmt = NULL;
+	sqlite3 *db = NULL;
+	string query = "SELECT COUNT(*)\n" \
+		"FROM OPERATION o\n" \
+		"-- jeœli piszemy do tego samego pliku...\n" \
+		"WHERE o.filename = (SELECT filename FROM OPERATION WHERE transaction_id = ? AND name = 'write' LIMIT 1)\n" \
+		"-- ... co inne transakcje...\n" \
+		"AND o.transaction_id != ?\n" \
+		"-- ... pisa³y lub czyta³y...\n" \
+		"AND (o.name = 'write' OR o.name = 'read')\n" \
+		"-- ... po rozpoczêciu naszego zapisu...\n" \
+		"AND o.id > (SELECT id FROM OPERATION WHERE transaction_id = ? ORDER BY id ASC LIMIT 1)\n" \
+		"-- ... i skoñczy³y siê...\n" \
+		"AND EXISTS(SELECT 1 FROM OPERATION WHERE transaction_id = o.transaction_id AND name = 'global_commit')";
+	prepareStatement(&db, &stmt, query);
+	bindTextParam(db, stmt, 1, transactionId);
+	bindTextParam(db, stmt, 2, transactionId);
+	bindTextParam(db, stmt, 3, transactionId);
+
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		int count = sqlite3_column_int(stmt, 0);
+		if (sqlite3_step(stmt) != SQLITE_DONE) {
+			throw exception(("Select count not done exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
+		}
+		closeStatement(db, stmt);
+		return count > 0;
+	} else {
+		throw exception(("Select count exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
+	}
+}
+
+bool dao::readIntercepted(string transactionId) {
+	sqlite3_stmt *stmt = NULL;
+	sqlite3 *db = NULL;
+	string query = "SELECT COUNT(*)\n" \
+		"FROM OPERATION o\n" \
+		"-- jeœli czytamy z tego samego pliku...\n" \
+		"WHERE o.filename = (SELECT filename FROM OPERATION WHERE transaction_id = ? AND name = 'read' LIMIT 1)\n" \
+		"-- ... co inne transakcje...\n" \
+		"AND o.transaction_id != ?\n" \
+		"-- ... pisa³y...\n" \
+		"AND o.name = 'write'\n" \
+		"-- ... po rozpoczêciu naszego odczytu...\n" \
+		"AND o.id > (SELECT id FROM OPERATION WHERE transaction_id = ? ORDER BY id ASC LIMIT 1)\n" \
+		"-- ... i skoñczy³y siê...\n" \
+		"AND EXISTS(SELECT 1 FROM OPERATION WHERE transaction_id = o.transaction_id AND name = 'global_commit')";
+	prepareStatement(&db, &stmt, query);
+	bindTextParam(db, stmt, 1, transactionId);
+	bindTextParam(db, stmt, 2, transactionId);
+	bindTextParam(db, stmt, 3, transactionId);
+
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		int count = sqlite3_column_int(stmt, 0);
+		if (sqlite3_step(stmt) != SQLITE_DONE) {
+			throw exception(("Select count not done exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
+		}
+		closeStatement(db, stmt);
+		return count > 0;
+	} else {
+		throw exception(("Select count exception: " + string(sqlite3_errmsg(db)) + "\nQuery was: " + query).c_str());
+	}
 }
