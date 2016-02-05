@@ -51,7 +51,7 @@ string addHeader(string& request) {
 int main(int argc, char* argv[])
 {
 	// global logging filter
-	boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+	boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
 
 	if (argc != 2) {
 		cout << "Usage: " << argv[0] << " config_file_full_path" << endl;
@@ -102,13 +102,9 @@ int main(int argc, char* argv[])
 
 				// sending response
 				string response = controller.calculateResponse(request);
-				if (response == controller::NO_RESPONSE) {
-					BOOST_LOG_TRIVIAL(debug) << "No response required";
-				} else {
-					BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
-					write(socket, buffer(addHeader(response)));
-					BOOST_LOG_TRIVIAL(debug) << "Response sent";
-				}
+				BOOST_LOG_TRIVIAL(debug) << "Sending response:\n" << response;
+				write(socket, buffer(addHeader(response)));
+				BOOST_LOG_TRIVIAL(debug) << "Response sent";
 			}
 			catch (exception& e)
 			{

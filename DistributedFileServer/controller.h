@@ -7,7 +7,6 @@
 class controller
 {
 public:
-	static const std::string NO_RESPONSE;
 	controller(config& config);
 	~controller();
 	std::string calculateResponse(std::string request);

@@ -11,8 +11,6 @@
 using namespace boost::property_tree;
 using namespace std;
 
-const string controller::NO_RESPONSE = "___NO_RESPONSE___";
-
 controller::controller(config& config):cfg(config), dao(config.getLogFileFullPath())
 {
 }
@@ -94,7 +92,7 @@ bool controller::canCommitTransaction(string transactionId) {
 
 string controller::handleGlobalCommitMessage(string transactionId) {
 	commitTransaction(transactionId);
-	return NO_RESPONSE;
+	return makeVoteCommitMessage(transactionId);
 }
 
 void controller::commitTransaction(string transactionId) {
@@ -115,5 +113,5 @@ void controller::commitPendingWrites(string transactionId) {
 
 string controller::handleGlobalAbortMessage(string transactionId) {
 	dao.insertOperation(MSG_GLOBAL_ABORT, transactionId);
-	return NO_RESPONSE;
+	return makeVoteAbortMessage(transactionId);
 }
