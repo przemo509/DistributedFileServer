@@ -1,4 +1,5 @@
 #include <string>
+#include <iostream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
@@ -82,11 +83,35 @@ string controller::handlePrepareMessage(string transactionId) {
 }
 
 bool controller::canCommitTransaction(string transactionId) {
+	bool canAutoCommit = canAutoCommitTransaction(transactionId);
+	if (cfg.getAutoMode()) {
+		return canAutoCommit;
+	} else {
+		cout << "Zatwierdziæ transakcjê " << transactionId << " ? Log na to " << (canAutoCommit ? "" : "nie ") << "pozwala.";
+		while (true) {
+			cout << endl << "t/n > ";
+			string userInput = getUserInput();
+			if ("t" == userInput) {
+				return true;
+			} else if("n" == userInput) {
+				return false;
+			}
+		}
+	}
+}
+
+string controller::getUserInput() {
+	string userInput;
+	getline(cin, userInput);
+	return userInput;
+}
+
+bool controller::canAutoCommitTransaction(string transactionId) {
 	if (dao.writeIntercepted(transactionId)) {
 		return false;
 	} else if (dao.readIntercepted(transactionId)) {
 		return false;
-	} 
+	}
 	return true;
 }
 
